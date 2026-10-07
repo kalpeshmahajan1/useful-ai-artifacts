@@ -1,0 +1,38 @@
+name: mine-review-comments
+# Monthly: export review comments, filter and cluster them. Output is an artifact for the rule-curator agent + architect.
+on:
+  workflow_dispatch:
+    inputs:
+      since: { description: 'Start date YYYY-MM-DD (default: 6 months)', required: false }
+  schedule:
+    - cron: '0 5 1 * *'
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  mine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Export
+        shell: pwsh
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          $since = '${{ github.event.inputs.since }}'
+          if ($since) { ./scripts/powershell/Export-PrComments.ps1 -Repo '${{ github.repository }}' -Since $since }
+          else        { ./scripts/powershell/Export-PrComments.ps1 -Repo '${{ github.repository }}' }
+      - name: Extract, cluster, baseline metrics
+        run: |
+          python scripts/python/extract_comments.py --in reports/mining/pr_comments.jsonl --out-dir reports/mining
+          python scripts/python/cluster_comments.py --in reports/mining/comments.filtered.jsonl --out-dir reports/mining
+          python scripts/python/pr_metrics.py --dir reports/mining | tee reports/mining/metrics.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rule-mining
+          path: |
+            reports/mining/clusters.md
+            reports/mining/extract_summary.md
+            reports/mining/metrics.txt
+          retention-days: 14

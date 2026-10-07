@@ -1,0 +1,51 @@
+name: Harvest review knowledge
+
+on:
+  workflow_dispatch:
+    inputs:
+      reviewer:
+        description: 'Architect GitHub login(s), comma separated'
+        required: true
+      limit:
+        description: 'Max recent merged PRs to scan'
+        default: '50'
+      force:
+        description: 'Re-harvest already processed PRs'
+        type: boolean
+        default: false
+  schedule:
+    - cron: '0 3 * * 1'   # weekly incremental; set the ARCHITECT_LOGIN repo variable
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  harvest:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Harvest PR review threads
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REVIEWER: ${{ inputs.reviewer || vars.ARCHITECT_LOGIN }}
+          LIMIT: ${{ inputs.limit || '30' }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          $splat = @{ Reviewer = ($env:REVIEWER -split ','); Limit = [int]$env:LIMIT }
+          if ($env:FORCE -eq 'true') { $splat.Force = $true }
+          ./scripts/Get-PrReviewComments.ps1 @splat
+      - name: Open PR with harvested data
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if (-not (git status --porcelain .github/review-knowledge/harvest)) { Write-Host 'Nothing new.'; exit 0 }
+          $branch = "review-knowledge/harvest-$(Get-Date -Format yyyyMMdd-HHmm)"
+          git config user.name 'review-knowledge-bot'; git config user.email 'bot@users.noreply.github.com'
+          git checkout -b $branch
+          git add .github/review-knowledge/harvest
+          git commit -m 'chore: harvest architect PR review comments'
+          git push origin $branch
+          gh pr create --title 'Harvest architect review comments' --body 'New harvest for `/learn-from-prs`. Open in VS Code, run `/learn-from-prs`, then `/curate-rules`.' --base ${{ github.event.repository.default_branch }}

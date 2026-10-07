@@ -1,0 +1,29 @@
+{
+  "_comment": "Project-specific deterministic checks. Each entry is a regex applied to code (comments/strings blanked) in files matching applies_to. Set enabled:true after an architect confirms it. Examples are DISABLED placeholders - adapt names to your solution.",
+  "patterns": [
+    {
+      "id": "ui-must-not-use-data-layer",
+      "enabled": false,
+      "rule": "DES-001",
+      "languages": ["csharp"],
+      "applies_to": ["**/<<PresentationProject>>/**"],
+      "pattern": "^\\s*using\\s+<<Company>>\\.<<Product>>\\.Data\\b",
+      "severity": "major",
+      "confidence": "likely",
+      "message": "Presentation layer must not reference the data layer directly (see DESIGN-CONSTRAINTS.md section 2).",
+      "fix": "Call the application service instead."
+    },
+    {
+      "id": "no-direct-sqlclient-outside-data-layer",
+      "enabled": false,
+      "rule": "DES-001",
+      "languages": ["csharp"],
+      "applies_to": ["**/*.cs"],
+      "pattern": "\\bnew\\s+SqlConnection\\s*\\(",
+      "severity": "major",
+      "confidence": "likely",
+      "message": "Create connections only through the approved data-access component.",
+      "fix": "Use the repository / data-access abstraction."
+    }
+  ]
+}

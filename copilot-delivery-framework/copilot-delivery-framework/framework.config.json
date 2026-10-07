@@ -1,0 +1,31 @@
+{
+  "_comment": "Single configuration file for all scripts. Edit values marked EDIT. No secrets here.",
+  "version": "1.0.0",
+  "target": { "dotnet": "net48", "csharp_max": "7.3" },
+  "reviewer_logins": [],
+  "_reviewer_logins_help": "EDIT: GitHub logins whose review comments are treated as high-signal for rule mining (e.g. architects). If empty, all human reviewers count equally.",
+  "bot_logins": ["github-actions[bot]", "copilot-pull-request-reviewer[bot]", "Copilot", "dependabot[bot]", "sonarqubecloud[bot]", "sonarcloud[bot]"],
+  "mining": {
+    "min_words": 6,
+    "min_signal_score": 2,
+    "min_distinct_prs": 3,
+    "similarity": 0.3,
+    "accepted_markers": ["done", "fixed", "updated", "addressed", "good catch", "will do", "changed", "resolved", "thanks, fixed"]
+  },
+  "scoring": {
+    "deductions": { "blocker": 25, "major": 10, "minor": 3, "nit": 1 },
+    "verify_multiplier": 0.5,
+    "pass_score": 80
+  },
+  "work_item_regex": "[A-Z][A-Z0-9]+-\\d+|#\\d+",
+  "paths": { "solution": "", "frontend_dir": "", "reports_dir": "reports" },
+  "critical_paths": [],
+  "_critical_paths_help": "EDIT: globs of code where an error can change what a clinician sees or decides (e.g. image rendering, measurements, patient/study matching, orientation/annotation). Changes here always require human architect sign-off.",
+  "excluded_globs": [
+    "**/bin/**", "**/obj/**", "**/node_modules/**", "**/dist/**", "**/packages/**",
+    "**/*.Designer.cs", "**/*.g.cs", "**/*.g.i.cs", "**/Migrations/**", "**/third_party/**",
+    "**/*.min.js", "**/package-lock.json", "reports/**"
+  ],
+  "project_patterns_file": "design/forbidden-patterns.json",
+  "instruction_char_budget": 3800
+}

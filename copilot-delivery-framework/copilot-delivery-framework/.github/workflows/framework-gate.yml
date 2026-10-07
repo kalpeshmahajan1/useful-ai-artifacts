@@ -1,0 +1,25 @@
+name: framework-gate
+# Deterministic gate only: no AI, no secrets, no network beyond checkout. Fails on certain/likely blocker|major findings in changed lines.
+on:
+  pull_request:
+    branches: [ main, master, develop, 'release/**' ]
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Framework self-tests
+        run: python -m unittest discover -s tests
+      - name: Rules lint and instruction freshness
+        run: |
+          python scripts/python/lint_rules.py --quiet
+          python scripts/python/compile_instructions.py --check
+      - name: Static checks on changed lines
+        run: |
+          python scripts/python/review_scope.py --mode branch --base "origin/${{ github.base_ref }}" --out reports/scope.json
+          python scripts/python/static_checks.py --scope reports/scope.json --format github --out reports/static.json

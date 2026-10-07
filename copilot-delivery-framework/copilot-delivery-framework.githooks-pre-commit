@@ -1,0 +1,6 @@
+#!/bin/sh
+# Blocks commits that introduce blocker/major (certain|likely) deterministic findings in staged lines.
+PY=$(command -v python3 || command -v python || command -v py)
+[ -z "$PY" ] && { echo "pre-commit: python not found, skipping static checks"; exit 0; }
+"$PY" scripts/python/review_scope.py --mode staged --out reports/scope.staged.json >/dev/null || exit 1
+"$PY" scripts/python/static_checks.py --scope reports/scope.staged.json
